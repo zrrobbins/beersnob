@@ -2,11 +2,11 @@
 data_transformer.py
 
 File for manipulating downloaded API data into correct format for use as a scikit-learn dataset.
-The only function that should need to be called is generate_beer_dataset()
 
 """
 import json
 import os
+from pprint import pprint
 
 # Where we are getting our json data from
 BEER_DATA_DIRECTORY = os.path.abspath("beer_data/")
@@ -44,7 +44,6 @@ def generate_beer_dataset():
                     # Flatten beer json, then assign data to it's target value
                     flattened_beer = flatten_json_data(beer)
                     if flattened_beer is not None: # else ignore if it doesn't have a style
-                        flattened_beer = trim_data(flattened_beer, 0)
                         dataset['data'].append(flattened_beer), dataset['labels'].append(flattened_beer[TARGET_VALUE])
 
         if (len(dataset['data']) != len(dataset['labels'])):
@@ -106,24 +105,42 @@ def flatten_json_data(beer_json):
 def trim_minimal(flattened_beer_json):
     """
     Default trim settings, try to keep as much info as possible.
+    Any beers without the following attributes will be discarded:
+    abv
+    ibu
     :param flattened_beer_json:
     :return:
     """
     # Default trim settings
-    if 'labels' in flattened_beer_json:
-        del(flattened_beer_json['labels'])
+    for beer in flattened_beer_json['data']:
+        if 'labels' in beer:
+            del(beer['labels'])
 
     return flattened_beer_json
 
 def trim_heavy(flattened_beer_json):
-    # TODO: Implement to heavily trim data to a small subset of attributes
-    pass
+    """
+    Delete all beers that do not have ibu and abv attributes.
+    Delete all attributes in beers that are not ibu or abv.
+    :param flattened_beer_json:
+    :return:
+    """
+    trimmed = {'data': [], 'labels': []}
+    for index, beer in enumerate(flattened_beer_json['data']):
+        if 'abv' in beer and 'ibu' in beer:
+            for attribute in list(beer):
+                if not (attribute == 'abv' or attribute == 'ibu'):
+                    del(beer[attribute])
+            trimmed['data'].append(beer)
+            trimmed['labels'].append(flattened_beer_json['labels'][index])
+
+    return trimmed
 
 
 def trim_data(flattened_beer_json, trim_level):
     """
     Function chooser for trimming data.
-    :param flattened_beer_json:
+    :param flattened_beer_json: This should be a python object representation of the json!
     :param trim_level:
     :return:
     """
@@ -136,3 +153,13 @@ def trim_data(flattened_beer_json, trim_level):
 
 # Run
 generate_beer_dataset()
+
+# For testing heavy trimming
+# with open(os.path.join(FLATTENED_BEER_DATA_DIRECTORY, 'flattened_beer_data.json'), 'r') as infile:
+#     json_data = infile.read()
+#     json_data = json.loads(json_data)
+#     pprint(json_data['data'][:10])
+#     pprint(json_data['labels'][:10])
+#     trimmed_beers = trim_heavy({'data': json_data['data'][:10], 'labels': json_data['labels'][:10]})
+#
+# pprint(trimmed_beers)
