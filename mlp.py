@@ -5,7 +5,6 @@ Multi-layer perceptron (deep neural network) test file.
 """
 import os
 import json
-from pprint import pprint
 from sklearn import neural_network
 from sklearn.feature_extraction import DictVectorizer
 
@@ -35,7 +34,7 @@ y_test = labels[int(.75 * n_samples):]
 print("Calculating...\n")
 # hidden_layer_sizes=(100, 100, 100) ==> Neural network with 3 hidden layers of 100 units each (5 total layers)
 # max_iter is the number of iterations we will stop the simulations if it doesn't converge by that point
-mlp_classifier = neural_network.MLPClassifier(hidden_layer_sizes=(100,), max_iter=1000)
+mlp_classifier = neural_network.MLPClassifier(hidden_layer_sizes=(10,), max_iter=1000)
 
 print('MLP score: {}'.format(mlp_classifier.fit(X_train, y_train).score(X_test, y_test)))
 print("Predicted probabilities for beer types: \n{}".format(mlp_classifier.predict_proba(beers[-1].reshape(1,-1))))

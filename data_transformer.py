@@ -46,7 +46,7 @@ def generate_beer_dataset():
                     if flattened_beer is not None: # else ignore if it doesn't have a style
                         dataset['data'].append(flattened_beer), dataset['labels'].append(flattened_beer[TARGET_VALUE])
 
-        if (len(dataset['data']) != len(dataset['labels'])):
+        if len(dataset['data']) != len(dataset['labels']):
             print("ERROR: Number of data objects does not match number of labels!")
 
         print("Flattened output with style labels pushed to {}".format(outfile_name))
@@ -118,6 +118,7 @@ def trim_minimal(flattened_beer_json):
 
     return flattened_beer_json
 
+
 def trim_heavy(flattened_beer_json):
     """
     Delete all beers that do not have ibu and abv attributes.
@@ -151,8 +152,9 @@ def trim_data(flattened_beer_json, trim_level):
     return trim_chooser[trim_level](flattened_beer_json)
 
 
-# Run
-generate_beer_dataset()
+# python data_transformer.py
+if __name__ == "__main__":
+    generate_beer_dataset()
 
 # For testing heavy trimming
 # with open(os.path.join(FLATTENED_BEER_DATA_DIRECTORY, 'flattened_beer_data.json'), 'r') as infile:
