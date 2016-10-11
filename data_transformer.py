@@ -120,7 +120,9 @@ def trim_data(flattened_beer_json, trim_level):
 
     attributes_of_interest = {
         0: ['style_category_name', 'style_ibuMin', 'style_ibuMax', 'style_abvMin', 'style_abvMax'],
-        1: ['abv', 'ibu']
+        1: ['abv', 'ibu'],
+        2: ['style_fgMax', 'style_fgMin', 'style_ogMin'], # don't use style_ogMax, no beer has the attribute!
+        3: ['servingTemperature', 'glass_name', 'available_name', 'abv', 'ibu']
     }
 
     trimmed = {'data': [], 'labels': []}
