@@ -62,7 +62,14 @@ def flatten_json_data(beer_json):
     :param beer_json:
     :return:
     """
-
+    if 'available' in beer_json:
+        if 'name' in beer_json['available']:
+            beer_json['available_name'] = beer_json['available']['name']
+        del beer_json['available']
+    if 'glass' in beer_json:
+        if 'name' in beer_json['glass']:
+            beer_json['glass_name'] = beer_json['glass']['name']
+        del beer_json['glass']
     if 'style' in beer_json:
         if 'abvMax' in beer_json['style']:
             beer_json['style_abvMax'] = beer_json['style']['abvMax']
@@ -84,13 +91,14 @@ def flatten_json_data(beer_json):
             beer_json['style_name'] = beer_json['style']['name']
         if 'ogMin' in beer_json['style']:
             beer_json['style_ogMin'] = beer_json['style']['ogMin']
+        if 'ogMax' in beer_json['style']:
+            beer_json['style_ogMax'] = beer_json['style']['ogMax']
         if 'shortName' in beer_json['style']:
             beer_json['style_shortName'] = beer_json['style']['shortName']
         if 'srmMax' in beer_json['style']:
             beer_json['style_srmMax'] = beer_json['style']['srmMax']
         if 'srmMin' in beer_json['style']:
             beer_json['style_srmMin'] = beer_json['style']['srmMin']
-
         del (beer_json['style'])
     else:
         beer_json = None
@@ -98,70 +106,37 @@ def flatten_json_data(beer_json):
     return beer_json
 
 
-##################
-# TRIM FUNCTIONS #
-##################
-
-def trim_minimal(flattened_beer_json):
+def trim_data(flattened_beer_json, trim_level):
     """
-    Default trim settings, try to keep as much info as possible.
-    Any beers without the following attributes will be discarded:
-    abv
-    ibu
-    :param flattened_beer_json:
+    Given a trim_level, trim the number of beers in a flattened beer json file to the designated
+    attributes of interest chosen by the trim level. Only beers that have all of the attributes in the
+    selected set will be kept, and all other attributes in those beers will be deleted (therefore
+    we are filtering out bad data and smoothing dimensionality in one sweep).
+
+    :param flattened_beer_json: This should be a python object representation of the json!
+    :param trim_level: Chooses our set of attributes we wish to filter by
     :return:
     """
-    # Default trim settings
-    for beer in flattened_beer_json['data']:
-        if 'labels' in beer:
-            del(beer['labels'])
 
-    return flattened_beer_json
+    attributes_of_interest = {
+        0: ['style_category_name', 'style_ibuMin', 'style_ibuMax', 'style_abvMin', 'style_abvMax'],
+        1: ['abv', 'ibu']
+    }
 
-
-def trim_heavy(flattened_beer_json):
-    """
-    Delete all beers that do not have ibu and abv attributes.
-    Delete all attributes in beers that are not ibu or abv.
-    :param flattened_beer_json:
-    :return:
-    """
     trimmed = {'data': [], 'labels': []}
+
     for index, beer in enumerate(flattened_beer_json['data']):
-        if 'abv' in beer and 'ibu' in beer:
+        # if all attributes of interest are present
+        if all(attribute in beer for attribute in attributes_of_interest[trim_level]):
             for attribute in list(beer):
-                if not (attribute == 'abv' or attribute == 'ibu'):
-                    del(beer[attribute])
+                if attribute not in attributes_of_interest[trim_level]:
+                    del (beer[attribute])
             trimmed['data'].append(beer)
             trimmed['labels'].append(flattened_beer_json['labels'][index])
 
     return trimmed
 
 
-def trim_data(flattened_beer_json, trim_level):
-    """
-    Function chooser for trimming data.
-    :param flattened_beer_json: This should be a python object representation of the json!
-    :param trim_level:
-    :return:
-    """
-    trim_chooser = {
-        0: trim_minimal,
-        1: trim_heavy
-    }
-    return trim_chooser[trim_level](flattened_beer_json)
-
-
 # python data_transformer.py
 if __name__ == "__main__":
     generate_beer_dataset()
-
-# For testing heavy trimming
-# with open(os.path.join(FLATTENED_BEER_DATA_DIRECTORY, 'flattened_beer_data.json'), 'r') as infile:
-#     json_data = infile.read()
-#     json_data = json.loads(json_data)
-#     pprint(json_data['data'][:10])
-#     pprint(json_data['labels'][:10])
-#     trimmed_beers = trim_heavy({'data': json_data['data'][:10], 'labels': json_data['labels'][:10]})
-#
-# pprint(trimmed_beers)
