@@ -1,11 +1,13 @@
 """
 data_transformer.py
 
-File for manipulating downloaded API data into correct format for use as a scikit-learn dataset.
+File for manipulating downloaded API data into correct format for use in a scikit-learn dataset.
+Assortment of other data manipulation/aggregation/filtering functions.
 
 """
 import json
 import os
+import operator
 from pprint import pprint
 
 # Where we are getting our json data from
@@ -40,6 +42,9 @@ def generate_beer_dataset():
         for file in os.listdir(BEER_DATA_DIRECTORY):
             with open(os.path.join(BEER_DATA_DIRECTORY, file), 'r') as infile:
                 json_data = json.load(infile)
+                if 'errorMessage' in json_data:
+                    print("{} was not downloaded correctly, ignoring.".format(file))
+                    continue
                 for beer in json_data['data']:
                     # Flatten beer json, then assign data to it's target value
                     flattened_beer = flatten_json_data(beer)
@@ -49,7 +54,7 @@ def generate_beer_dataset():
         if len(dataset['data']) != len(dataset['labels']):
             print("ERROR: Number of data objects does not match number of labels!")
 
-        print("Flattened output with style labels pushed to {}".format(outfile_name))
+        print("Flattened output with {} labels pushed to {}".format(TARGET_VALUE, outfile_name))
         print("Number of flattened beer objects: {}".format(len(dataset['data'])))
 
         outfile.write(json.dumps(dataset))
@@ -122,21 +127,143 @@ def trim_data(flattened_beer_json, trim_level):
         0: ['style_category_name', 'style_ibuMin', 'style_ibuMax', 'style_abvMin', 'style_abvMax'],
         1: ['abv', 'ibu'],
         2: ['style_fgMax', 'style_fgMin', 'style_ogMin'], # don't use style_ogMax, no beer has the attribute!
-        3: ['servingTemperature', 'glass_name', 'available_name', 'abv', 'ibu']
+        3: ['servingTemperature', 'glass_name', 'available_name', 'abv', 'ibu'],
+        4: ['ingredients'],
+        5: ['ingredients', 'abv', 'ibu']
     }
 
     trimmed = {'data': [], 'labels': []}
+
+    # Get all ingredients
+    possible_ingredients = get_all_ingredients()
+    # Get top 50 highest occurring ingredients
+    possible_ingredients = dict(sorted(possible_ingredients.items(), key=operator.itemgetter(1), reverse=True)[:50])
 
     for index, beer in enumerate(flattened_beer_json['data']):
         # if all attributes of interest are present
         if all(attribute in beer for attribute in attributes_of_interest[trim_level]):
             for attribute in list(beer):
-                if attribute not in attributes_of_interest[trim_level]:
+                if attribute == 'ingredients':
+                    for ing in possible_ingredients.keys():
+                        if ing in get_beer_ingredients(beer):
+                            beer[ing] = True
+                        else:
+                            beer[ing] = False
+                    del(beer[attribute])
+                elif attribute not in attributes_of_interest[trim_level]:
                     del (beer[attribute])
             trimmed['data'].append(beer)
             trimmed['labels'].append(flattened_beer_json['labels'][index])
 
     return trimmed
+
+
+def get_beer_ingredients(beer):
+    """
+    Get names of all the ingredients in
+    :param beer:
+    :return:
+    """
+    beer_ingredients = []
+    for ing in beer['ingredients']:
+        for item in beer['ingredients'][ing]:
+            if 'name' in item:
+                if item['name'] not in beer_ingredients:
+                    beer_ingredients.append(item['name'])
+
+    return beer_ingredients
+
+
+def get_all_ingredients():
+    """
+    Iterates through all beer data saved in the beer_data directory, and puts all ingredients in a dictionary
+    with their rate of occurrence
+    :return:
+    """
+    ingredients = {}
+    for file in os.listdir(BEER_DATA_DIRECTORY):
+        with open(os.path.join(BEER_DATA_DIRECTORY, file), 'r') as infile:
+            json_data = json.load(infile)
+            if 'errorMessage' in json_data:
+                print("{} was not downloaded correctly, ignoring.".format(file))
+                continue
+            for beer in json_data['data']:
+                if 'ingredients' in beer:
+                    for ing in beer['ingredients']:
+                        for item in beer['ingredients'][ing]:
+                            if 'name' in item:
+                                if item['name'] not in ingredients:
+                                    ingredients[item['name']] = 1
+                                else:
+                                    ingredients[item['name']] += 1
+
+    return ingredients
+
+
+def extract(obj, fields):
+    result = {}
+    for key, sub_fields in fields.items():
+        if key not in obj:
+            return None
+        val = obj[key]
+        if sub_fields is None:
+            result[key] = val
+        elif type(val) == list:
+            for i, v in enumerate(val):
+                sub_result = extract(v, sub_fields)
+                if sub_result is None:
+                    return None
+                for sub_key, sub_val in sub_result.items():
+                    result[key + '_' + str(i) + '_' + sub_key] = sub_val
+        else:
+            sub_result = extract(val, sub_fields)
+            if sub_result is None:
+                return None
+            for sub_key, sub_val in sub_result.items():
+                result[key + '_' + sub_key] = sub_val
+    return result
+
+import requests
+BEER_API_KEY = os.environ['BEER_API_KEY']
+
+
+def test():
+    response = requests.get("http://api.brewerydb.com/v2/beer/oJFZwK", params={'key': BEER_API_KEY, 'withBreweries': 'Y', 'withIngredients': 'Y'})
+    json_object = json.loads(response.content.decode())
+    obj1 = {
+        'a': 1,
+        'b': [
+            {'c': 2, 'd': 3},
+            {'c': 4, 'd': 5},
+        ]
+    }
+    fields1 = {
+        'a': None,
+        'b': {
+            'd': None,
+        }
+    }
+    fields2 = {
+        'a': None,
+        'b': {
+            'e': None,
+        }
+    }
+    print(extract(obj1, fields1))
+    print(extract(obj1, fields2))
+
+    beer_test_fields = {
+        'abv': None,
+        'ibu': None,
+        'ingredients': {
+            'hops': {
+                'name': None
+            },
+            'malt': {
+                'name': None
+            }
+        }
+    }
 
 
 # python data_transformer.py
