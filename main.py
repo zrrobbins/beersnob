@@ -2,8 +2,13 @@
 main.py
 
 Main script for running classifiers on beer data.
+
+Usage:
+python main.py [trim_level]
+
 """
 import os
+import sys
 import json
 
 from sklearn.feature_extraction import DictVectorizer
@@ -24,9 +29,14 @@ from data_transformer import FLATTENED_BEER_DATA_DIRECTORY
 # >1 = cross validate with CROSS_VALIDATE number of folds
 CROSS_VALIDATE = 1
 # Percent test data
-TEST_DATA = .25
+TEST_DATA = .3
 # Trim attribute set, refer to trim_data in data_transformer.py for description of attributes in each set
 TRIM_SELECTION = 4
+
+# If trim specified on command line, override value above (useful for easy testing)
+if len(sys.argv) > 1 and len(sys.argv) < 3:
+    TRIM_SELECTION = int(sys.argv[1])
+
 
 names = ["Nearest Neighbors w/ 5 Neighbors", "Linear SVM", "RBF SVM",
          "Decision Tree", "Random Forest (10 Trees)", "Random Forest (100 Trees)",
@@ -44,7 +54,8 @@ classifiers = [
     MLPClassifier(hidden_layer_sizes=(100, 100), max_iter=1000),
     MLPClassifier(hidden_layer_sizes=(100, 100, 100), max_iter=1000),
     AdaBoostClassifier(),
-    GaussianNB()]
+    GaussianNB()
+]
 
 
 with open(os.path.join(FLATTENED_BEER_DATA_DIRECTORY, 'flattened_beer_data.json'), 'r') as infile:

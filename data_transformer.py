@@ -8,7 +8,6 @@ Assortment of other data manipulation/aggregation/filtering functions.
 import json
 import os
 import operator
-from pprint import pprint
 
 # Where we are getting our json data from
 BEER_DATA_DIRECTORY = os.path.abspath("beer_data/")
@@ -126,10 +125,12 @@ def trim_data(flattened_beer_json, trim_level):
     attributes_of_interest = {
         0: ['style_category_name', 'style_ibuMin', 'style_ibuMax', 'style_abvMin', 'style_abvMax'],
         1: ['abv', 'ibu'],
-        2: ['style_fgMax', 'style_fgMin', 'style_ogMin'], # don't use style_ogMax, no beer has the attribute!
-        3: ['servingTemperature', 'glass_name', 'available_name', 'abv', 'ibu'],
-        4: ['ingredients'],
-        5: ['ingredients', 'abv', 'ibu']
+        2: ['style_fgMax'],
+        3: ['style_fgMax', 'style_ogMin'],
+        4: ['style_fgMax', 'style_fgMin', 'style_ogMin'], # don't use style_ogMax, no beer has the attribute!
+        5: ['servingTemperature', 'glass_name', 'available_name', 'abv', 'ibu'],
+        6: ['ingredients'],
+        7: ['ingredients', 'abv', 'ibu']
     }
 
     trimmed = {'data': [], 'labels': []}
@@ -226,44 +227,6 @@ def extract(obj, fields):
 import requests
 BEER_API_KEY = os.environ['BEER_API_KEY']
 
-
-def test():
-    response = requests.get("http://api.brewerydb.com/v2/beer/oJFZwK", params={'key': BEER_API_KEY, 'withBreweries': 'Y', 'withIngredients': 'Y'})
-    json_object = json.loads(response.content.decode())
-    obj1 = {
-        'a': 1,
-        'b': [
-            {'c': 2, 'd': 3},
-            {'c': 4, 'd': 5},
-        ]
-    }
-    fields1 = {
-        'a': None,
-        'b': {
-            'd': None,
-        }
-    }
-    fields2 = {
-        'a': None,
-        'b': {
-            'e': None,
-        }
-    }
-    print(extract(obj1, fields1))
-    print(extract(obj1, fields2))
-
-    beer_test_fields = {
-        'abv': None,
-        'ibu': None,
-        'ingredients': {
-            'hops': {
-                'name': None
-            },
-            'malt': {
-                'name': None
-            }
-        }
-    }
 
 
 # python data_transformer.py
