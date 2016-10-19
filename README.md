@@ -3,7 +3,7 @@ Your favorite neighborhood machine-learning beer snob.
 
 
 ## Purpose
-This program is our final project for our Artificial Intelligence class at WPI. We aimed to see if it was possible to classify beers by style (e.g. IPA, Pale Ale) based on different sets of attributes of that beer (e.g. abv, ibu, etc.). This project makes use of the [scikit-learn library](scikit-learn.org) for our classifiers, and [BreweryDB](brewerydb.com) for our beer data.
+This program is our final project for our Artificial Intelligence class at WPI. We aimed to see if it was possible to classify beers by style (e.g. IPA, Pale Ale) based on different sets of attributes of that beer (e.g. abv, ibu, etc.). This project makes use of the [scikit-learn library](www.scikit-learn.org) for our classifiers, and [BreweryDB](www.brewerydb.com) for our beer data.
 
 
 ## Setup
